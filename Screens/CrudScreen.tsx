@@ -72,7 +72,7 @@ const CrudScreen = () => {
   };
 
   return (
-    <View>
+    <View style={{padding: 20}}>
       //create
       <View
         style={{
@@ -113,7 +113,10 @@ const CrudScreen = () => {
               <TouchableOpacity
                 onPress={() => handleUpdatePress(item)}
                 style={styles.btn2}>
-                <Text style={{fontSize: 12, color: '#F5F5F5'}}>UPDATE</Text>
+                <Text
+                  style={{fontSize: 12, color: '#F5F5F5', fontWeight: 'bold'}}>
+                  UPDATE
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.delBTN}
@@ -184,11 +187,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   flex: {
-    marginVertical: 20,
+    marginVertical: 15,
     flex: 1,
     flexDirection: 'row',
-    gap: 25,
-    paddingHorizontal: 20,
+    gap: 15,
+    paddingHorizontal: 5,
   },
   gap: {
     flex: 1,
