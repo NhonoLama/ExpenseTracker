@@ -1,19 +1,11 @@
 import {useState, useContext} from 'react';
-import {View, TextInput, Button} from 'react-native';
+import {View, TextInput, Button, StyleSheet, Text} from 'react-native';
 import {AuthContext} from '../App';
+import Header from '../Components/Header';
+import React from 'react';
 
-const handleSignIn = async()=>{
-  const username = await AsyncStorage.getItem(`userRegistrationData-${token.username}-${token.email}`);
-  if (!username || !password) {
-    Alert.alert('ERROR', 'Enter both fields');
-    return;
-  }
-  elseif (username === 'admin' && password === 'admin') {
-    signIn('token');
-}
-
-function SignInScreen() {
-  const [username, setUsername] = useState('');
+function SignInScreen({navigation}: any) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const authContext = useContext(AuthContext);
@@ -22,22 +14,50 @@ function SignInScreen() {
   }
   const {signIn} = authContext;
 
+  const handleSignIn = () => {
+    signIn({email, password});
+    navigation.navigate('UserDetails', {
+      email: email,
+    });
+  };
+
   return (
-    <View>
-      <TextInput
-        placeholder="Username"
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Sign In" onPress={handleSignIn})} />
+    <View style={{margin: 30}}>
+      <Header />
+      <View style={{marginBottom: 40}}>
+        <TextInput
+          style={styles.textBorder}
+          placeholder="Email"
+          value={email}
+          onChangeText={text => setEmail(text)}
+        />
+        <TextInput
+          style={[styles.textBorder, {marginBottom: 30}]}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <Button title="Sign In" onPress={() => handleSignIn} />
+      </View>
+      <View style={{alignItems: 'center', gap: 10}}>
+        <Text style={{fontStyle: 'italic'}}>Not Signed in??</Text>
+        <Button
+          title="Register"
+          onPress={() => navigation.navigate('RegisterIn')}
+        />
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  textBorder: {
+    borderWidth: 1,
+    borderBottomColor: '#BDB395',
+    paddingHorizontal: 15,
+    marginBottom: 15,
+  },
+});
 
 export default SignInScreen;

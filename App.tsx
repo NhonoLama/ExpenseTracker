@@ -6,7 +6,9 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SignInScreen from './Screens/SignInScreen';
 import SplashScreen from './Screens/SplashScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Button} from 'react-native';
+import {Alert, Button} from 'react-native';
+import RegisterInScreen from './Screens/RegisterInScreen';
+import UserDetailsScreen from './Screens/UserDetailsScreen';
 
 type prevStateType = {
   userToken: string | null;
@@ -79,8 +81,31 @@ const App = () => {
   const authContext = useMemo(
     () => ({
       signIn: async (token: any) => {
-        await AsyncStorage.setItem('userToken', JSON.stringify(token));
-        dispatch({type: 'SIGN_IN', token});
+        try {
+          const userData = await AsyncStorage.getItem(
+            `userRegistrationData-${token.email}`,
+          );
+
+          if (!userData) {
+            Alert.alert('ERROR', 'User not found.');
+            return;
+          }
+
+          const storedUser = JSON.parse(userData);
+
+          if (
+            storedUser.email !== token.email ||
+            storedUser.password !== token.password
+          ) {
+            Alert.alert('ERROR', 'Invalid password.');
+            return;
+          }
+
+          await AsyncStorage.setItem('userToken', JSON.stringify(token));
+          dispatch({type: 'SIGN_IN', token});
+        } catch (error) {
+          console.error('Sign-in error:', error);
+        }
       },
       signOut: async () => {
         await AsyncStorage.removeItem('userToken');
@@ -90,7 +115,7 @@ const App = () => {
       },
       registerIn: async (token: any) => {
         await AsyncStorage.setItem(
-          `userRegistrationData-${token.username}-${token.email}`,
+          `userRegistrationData-${token.email}`,
           JSON.stringify(token),
         );
         dispatch({type: 'REGISTER_IN', token});
@@ -104,16 +129,25 @@ const App = () => {
       <NavigationContainer>
         <Stack.Navigator>
           {state.isLoading ? (
-            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen
+              name="Splash"
+              component={SplashScreen}
+              options={{headerShown: false}}
+            />
           ) : state.userToken === null ? (
             <>
               <Stack.Screen
                 name="SignIn"
                 component={SignInScreen}
                 options={{
-                  title: 'Sign in',
+                  headerShown: false,
                   animationTypeForReplace: state.userToken ? 'pop' : 'push',
                 }}
+              />
+              <Stack.Screen
+                name="RegisterIn"
+                component={RegisterInScreen}
+                options={{headerShown: false}}
               />
             </>
           ) : (
@@ -122,12 +156,15 @@ const App = () => {
                 name="Home"
                 component={CrudScreen}
                 options={{
-                  headerRight: () => (
-                    <Button
-                      title="Sign Out"
-                      onPress={() => authContext.signOut()}
-                    />
-                  ),
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="UserDetails"
+                component={UserDetailsScreen}
+                options={{
+                  headerShown: false,
+                  animationTypeForReplace: state.userToken ? 'pop' : 'push',
                 }}
               />
             </>

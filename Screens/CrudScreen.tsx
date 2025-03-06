@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {
   Text,
   View,
@@ -10,6 +10,8 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import {AuthContext} from '../App';
+import NavBar from '../Components/NavBar';
 
 type expenseTypo = {
   id: number;
@@ -17,7 +19,7 @@ type expenseTypo = {
   cost: number | '';
 };
 
-const CrudScreen = () => {
+const CrudScreen = ({navigation}: any) => {
   const [name, setName] = useState<string>('');
   const [cost, setCost] = useState<number | ''>('');
   const [visible, setVisible] = useState(false);
@@ -29,6 +31,11 @@ const CrudScreen = () => {
     {id: 2, name: 'sports', cost: 100},
     {id: 3, name: 'food', cost: 5000},
   ]);
+
+  const authContext = useContext(AuthContext);
+  if (!authContext || !authContext.signOut) {
+    throw new Error('No AuthContext provided');
+  }
 
   const handleCreate = () => {
     if (!name || !cost) {
@@ -73,6 +80,7 @@ const CrudScreen = () => {
 
   return (
     <View style={{padding: 20}}>
+      <NavBar navigation={navigation} />
       //create
       <View
         style={{
