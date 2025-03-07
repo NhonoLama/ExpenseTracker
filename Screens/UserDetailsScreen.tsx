@@ -1,30 +1,35 @@
 import React from 'react';
-import {Image, Text, View} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {View, Text, FlatList} from 'react-native';
 
-const UserDetailsScreen = async ({route}: any) => {
-  // try {
-  //   const {email} = route.params;
-  //   const userData = await AsyncStorage.getItem(
-  //     `userRegistrationData-${email}`,
-  //   );
-
-  //   if (!userData) {
-  //     return;
-  //   }
-
-  //   const storedUser = JSON.parse(userData);
-  //   console.log(storedUser);
-  // } catch (error) {
-  //   console.log(error);
-  // }
+const UserDetailsScreen = ({route}: any) => {
+  const {user, expenses} = route.params;
 
   return (
-    <View>
-      <View>
-        <Image source={require('../assets/user.png')} />
-        <Text></Text>
-      </View>
+    <View style={{flex: 1, padding: 20}}>
+      {user ? (
+        <>
+          <Text style={{fontSize: 24}}>Username: {user.username}</Text>
+          <Text style={{fontSize: 18}}>Email: {user.email}</Text>
+        </>
+      ) : (
+        <Text style={{fontSize: 18}}>No user found</Text>
+      )}
+
+      <Text style={{fontSize: 20, marginVertical: 10}}>Expenses:</Text>
+      {expenses && expenses.length > 0 ? (
+        <FlatList
+          data={expenses}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({item}) => (
+            <View style={{padding: 10}}>
+              <Text>Expense: {item.description}</Text>
+              <Text>Amount: {item.amount}</Text>
+            </View>
+          )}
+        />
+      ) : (
+        <Text>No expenses found</Text>
+      )}
     </View>
   );
 };

@@ -81,7 +81,7 @@ const CrudScreen = ({navigation}: any) => {
   return (
     <View style={{padding: 20}}>
       <NavBar navigation={navigation} />
-      //create
+
       <View
         style={{
           paddingBottom: 20,
@@ -182,14 +182,14 @@ const styles = StyleSheet.create({
   },
   btn2: {
     width: 60,
-    height: 30,
+    height: 25,
     padding: 5,
     backgroundColor: '#FFA725',
     borderRadius: 5,
   },
   delBTN: {
     width: 32,
-    height: 30,
+    height: 25,
     padding: 5,
     backgroundColor: '#E52020',
     borderRadius: 5,

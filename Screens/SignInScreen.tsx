@@ -16,9 +16,7 @@ function SignInScreen({navigation}: any) {
 
   const handleSignIn = () => {
     signIn({email, password});
-    navigation.navigate('UserDetails', {
-      email: email,
-    });
+    console.log('Sign In complete');
   };
 
   return (
@@ -38,7 +36,7 @@ function SignInScreen({navigation}: any) {
           onChangeText={setPassword}
           secureTextEntry
         />
-        <Button title="Sign In" onPress={() => handleSignIn} />
+        <Button title="Sign In" onPress={handleSignIn} />
       </View>
       <View style={{alignItems: 'center', gap: 10}}>
         <Text style={{fontStyle: 'italic'}}>Not Signed in??</Text>

@@ -9,21 +9,45 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert, Button} from 'react-native';
 import RegisterInScreen from './Screens/RegisterInScreen';
 import UserDetailsScreen from './Screens/UserDetailsScreen';
+import {
+  createTables,
+  getDBConnection,
+  getUserDetails,
+  getUserExpenses,
+  addUser,
+} from './Database/dbservices';
 
 type prevStateType = {
   userToken: string | null;
   isLoading: boolean;
+  user: User | null;
+  expenses: any[];
 };
 
 type actionType = {
   token?: any;
-  type: 'RESTORE_TOKEN' | 'SIGN_IN' | 'SIGN_OUT' | 'REGISTER_IN';
+  user?: User;
+  expenses?: any[];
+  type:
+    | 'RESTORE_TOKEN'
+    | 'SIGN_IN'
+    | 'SIGN_OUT'
+    | 'REGISTER_IN'
+    | 'SET_EXPENSES'
+    | 'SET_USER';
+};
+
+type User = {
+  username: string;
+  email: string;
+  password: string;
 };
 
 type authContextType = {
   signIn: (token: any) => void;
   signOut: () => void;
   registerIn: (token: any) => void;
+  getUserDetails: (email: string) => Promise<User | null>;
 };
 
 const Stack = createNativeStackNavigator();
@@ -33,6 +57,8 @@ export const AuthContext = createContext<authContextType | null>(null);
 const initialState = {
   userToken: null,
   isLoading: true,
+  user: null,
+  expenses: [],
 };
 
 function reducer(prevState: prevStateType, action: actionType) {
@@ -58,6 +84,18 @@ function reducer(prevState: prevStateType, action: actionType) {
         ...prevState,
         userToken: null,
       };
+    case 'SET_EXPENSES':
+      return {
+        ...prevState,
+        expenses: action.expenses || [],
+      };
+    case 'SET_USER':
+      return {
+        ...prevState,
+        user: action.user || null,
+      };
+    default:
+      return prevState;
   }
 }
 
@@ -69,12 +107,40 @@ const App = () => {
       let userToken;
       try {
         userToken = await AsyncStorage.getItem('userToken');
-        dispatch({type: 'RESTORE_TOKEN', token: userToken});
-      } catch (e: any) {
-        console.log("Couldn't restore token");
+
+        if (userToken) {
+          // Parse the userToken JSON string
+          const parsedToken = JSON.parse(userToken);
+          const userEmail = parsedToken.email; // Extract the email from the token
+
+          // Dispatch token to update Redux store or state
+          dispatch({type: 'RESTORE_TOKEN', token: userToken});
+          console.log('Restored Token:', userToken);
+
+          const db = await getDBConnection();
+          await createTables(db);
+
+          const user = await getUserDetails(db, userEmail);
+          if (user) {
+            console.log('User Found:', user);
+
+            const expenses = await getUserExpenses(db, user.id);
+            console.log('User Expenses:', expenses);
+
+            dispatch({type: 'SET_EXPENSES', expenses});
+          } else {
+            console.log('No user found for the provided email.');
+          }
+        } else {
+          console.log('No userToken found in AsyncStorage.');
+          dispatch({type: 'RESTORE_TOKEN', token: null});
+        }
+      } catch (e) {
+        console.error("Couldn't restore token or fetch data", e);
         dispatch({type: 'RESTORE_TOKEN', token: null});
       }
     };
+
     bootstrapAsync();
   }, []);
 
@@ -113,12 +179,37 @@ const App = () => {
           type: 'SIGN_OUT',
         });
       },
-      registerIn: async (token: any) => {
-        await AsyncStorage.setItem(
-          `userRegistrationData-${token.email}`,
-          JSON.stringify(token),
-        );
-        dispatch({type: 'REGISTER_IN', token});
+      registerIn: async (token: User) => {
+        try {
+          const db = await getDBConnection();
+          const user = {
+            username: token.username,
+            email: token.email,
+            password: token.password,
+          };
+          await createTables(db);
+
+          await addUser(db, user);
+          dispatch({type: 'REGISTER_IN', token: user});
+        } catch (error) {
+          console.error('Error saving user to DB:', error);
+        }
+      },
+      getUserDetails: async (email: string) => {
+        try {
+          const userData = await AsyncStorage.getItem(
+            `userRegistrationData-${email}`,
+          );
+
+          if (!userData) {
+            return;
+          }
+
+          const storedUser = JSON.parse(userData);
+          return storedUser;
+        } catch (error) {
+          console.log(error);
+        }
       },
     }),
     [],
@@ -165,6 +256,10 @@ const App = () => {
                 options={{
                   headerShown: false,
                   animationTypeForReplace: state.userToken ? 'pop' : 'push',
+                }}
+                initialParams={{
+                  user: state.userToken ? state.user : null,
+                  expenses: state.userToken ? state.expenses : [],
                 }}
               />
             </>
