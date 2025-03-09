@@ -32,7 +32,21 @@ export const createTables = async (db: SQLiteDatabase) => {
   await db.executeSql(expenseQuery);
 };
 
-export const getUserDetails = async (db: SQLiteDatabase,email:string): Promise<User|undefined> => {
+export const getAllUsers = async (db: SQLiteDatabase): Promise<User[]> => {
+  const users: User[] = [];
+  const results = await db.executeSql(`SELECT * FROM ${userTable}`);
+
+  results.forEach(result => {
+    for (let i = 0; i < result.rows.length; i++) {
+      users.push(result.rows.item(i));
+    }
+  });
+
+  return users;
+};
+
+
+export const getUserData = async (db: SQLiteDatabase,email:string): Promise<User|undefined> => {
     try {
         
         const query = `SELECT * FROM ${userTable} WHERE email = ?`;
@@ -60,6 +74,8 @@ export const addUser = async (db: SQLiteDatabase, user: User) => {
 
 // CRUD for Expenses
 export const getUserExpenses = async (db: SQLiteDatabase, userId: number): Promise<Expense[]> => {
+  if(!userId){console.log("empty user");
+  }
   const expenses: Expense[] = [];
   const results = await db.executeSql(`SELECT * FROM ${expenseTable} WHERE userId = ?`, [userId]);
   results.forEach(result => {
@@ -73,4 +89,22 @@ export const getUserExpenses = async (db: SQLiteDatabase, userId: number): Promi
 export const addExpense = async (db: SQLiteDatabase, expense: Expense) => {
   const insertQuery = `INSERT INTO ${expenseTable} (userId, name, cost) VALUES (?, ?, ?)`;
   await db.executeSql(insertQuery, [expense.userId, expense.name, expense.cost]);
+  const result = await db.executeSql('SELECT * FROM expenses WHERE userId = ?', [expense.userId]);
+  console.log('Inserted expense:', result[0].rows.raw());
+};
+
+export const updateExpense = async (db: SQLiteDatabase, expense: Expense) => {
+  const updateQuery = `UPDATE ${expenseTable} SET name = ?, cost = ? WHERE id = ? AND userId = ?`;
+  await db.executeSql(updateQuery, [
+    expense.name,
+    expense.cost,
+    expense.id,
+    expense.userId,
+  ]);
+};
+
+export const deleteExpense = async (db: SQLiteDatabase, expenseId: number, userId: number) => {
+  const deleteQuery = `DELETE FROM ${expenseTable} WHERE id = ? AND userId = ?`;
+  await db.executeSql(deleteQuery, [expenseId, userId]);
+  
 };

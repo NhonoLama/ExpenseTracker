@@ -15,7 +15,7 @@ function RegisterInScreen({navigation}: any) {
   const [email, setEmail] = useState('');
 
   const authContext = useContext(AuthContext);
-  if (!authContext || !authContext.signIn) {
+  if (!authContext || !authContext.registerIn) {
     throw new Error('No AuthContext provided');
   }
   const {registerIn} = authContext;
@@ -25,7 +25,11 @@ function RegisterInScreen({navigation}: any) {
       Alert.alert('Error', 'Invalid Email');
       return;
     }
-    registerIn({username, email, password});
+    registerIn({
+      username,
+      email,
+      password,
+    });
     navigation.navigate('SignIn');
     Alert.alert('Success', 'Registered Successfully');
   };

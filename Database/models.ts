@@ -1,4 +1,5 @@
 export type User = {
+    id: number;  
     email: string;
     username: string;
     password: string;
@@ -6,7 +7,7 @@ export type User = {
   
   export type Expense = {
     id: number;
-    userId: number;
+    userId: string;
     name: string;
     cost: number;
   };
