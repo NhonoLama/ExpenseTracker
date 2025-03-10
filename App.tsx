@@ -1,11 +1,10 @@
 import React, {createContext, useEffect, useMemo, useReducer} from 'react';
-import {Alert, Button} from 'react-native';
+import {Alert} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
-// Screens and database methods import (keep your imports as they are)
 import CrudScreen from './Screens/CrudScreen';
 import SignInScreen from './Screens/SignInScreen';
 import SplashScreen from './Screens/SplashScreen';
@@ -155,7 +154,7 @@ const App = () => {
           const db = await getDBConnection();
 
           const storedUser = await getUserData(db, user.email);
-          console.log(storedUser);
+          console.log('Data:', storedUser);
 
           if (!storedUser) {
             Alert.alert('ERROR', 'User not found.');
@@ -167,7 +166,8 @@ const App = () => {
             return;
           }
 
-          const expenses = await getUserExpenses(db, user.id);
+          const expenses = await getUserExpenses(db, storedUser.id);
+          console.log(storedUser.id);
           console.log('Expense:', expenses);
 
           await AsyncStorage.setItem('userToken', JSON.stringify(user));

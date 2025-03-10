@@ -52,11 +52,7 @@ export const getUserData = async (db: SQLiteDatabase,email:string): Promise<User
         const query = `SELECT * FROM ${userTable} WHERE email = ?`;
         const results = await db.executeSql(query, [email]);
     
-        console.log(results);
-    
-        // Check if any rows were returned
         if (results[0].rows.length > 0) {
-          // Return the user as an array (even if only one result)
           const user = results[0].rows.item(0);  
           return user; 
         }

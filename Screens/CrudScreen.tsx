@@ -19,6 +19,7 @@ import {
   getUserExpenses,
   updateExpense,
 } from '../Database/dbservices';
+import PieChart from 'react-native-pie-chart';
 
 type expenseTypo = {
   id: number;
@@ -29,7 +30,8 @@ type expenseTypo = {
 
 const CrudScreen = ({navigation}: any) => {
   const [name, setName] = useState<string>('');
-  const [cost, setCost] = useState<number | ''>('');
+  const [cost, setCost] = useState<number>(0);
+  const [totalCost, setTotalCost] = useState<number>(0);
   const [visible, setVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<expenseTypo | null>(
     null,
@@ -45,15 +47,28 @@ const CrudScreen = ({navigation}: any) => {
   useEffect(() => {
     if (!user) {
       console.log('User is not logged in.');
-      return; // Early return if no user is available
+
+      return;
     }
     const getExpenses = async () => {
       const db = await getDBConnection();
       const userExpenses = await getUserExpenses(db, user.id);
       setExpenses(userExpenses);
+      console.log(expenses);
     };
     getExpenses();
   }, [user]);
+
+  useEffect(() => {
+    const calcTotalCost = () => {
+      const total = expenses.reduce(
+        (acc, expense) => acc + (isNaN(expense.cost) ? 0 : expense.cost),
+        0,
+      );
+      setTotalCost(total);
+    };
+    calcTotalCost();
+  }, [expenses]);
 
   const addExpenseForUser = async (newExpense: expenseTypo) => {
     try {
@@ -67,13 +82,13 @@ const CrudScreen = ({navigation}: any) => {
   };
 
   const handleCreate = async () => {
-    if (!name || Number.isNaN(cost) || cost === '') {
+    if (!name || Number.isNaN(cost)) {
       Alert.alert('ERROR', 'Enter both fields correctly');
       return;
     }
     if (!user) {
       console.log('User is not logged in.');
-      return; // Early return if no user is available
+      return;
     }
 
     const newid =
@@ -83,18 +98,17 @@ const CrudScreen = ({navigation}: any) => {
       id: newid,
       userId: user.id.toString(),
       name,
-      cost: cost as number,
+      cost: isNaN(cost) ? 0 : cost,
     };
 
     const addedExpense = await addExpenseForUser(addone);
 
     if (addedExpense) {
-      // Re-fetch the expenses after adding
       const db = await getDBConnection();
       const updatedExpenses = await getUserExpenses(db, user.id);
       setExpenses(updatedExpenses);
       setName('');
-      setCost('');
+      setCost(0);
     } else {
       Alert.alert('ERROR', 'Failed to add expense.');
     }
@@ -112,7 +126,7 @@ const CrudScreen = ({navigation}: any) => {
       const updatedExpense = {
         ...selectedExpense,
         name,
-        cost: cost === '' ? 0 : cost,
+        cost,
       };
       if (!user) {
         console.log('User is not logged in.');
@@ -125,7 +139,7 @@ const CrudScreen = ({navigation}: any) => {
       setExpenses(updatedExpenses);
       setSelectedExpense(null);
       setName('');
-      setCost('');
+      setCost(0);
     }
 
     setVisible(false);
@@ -134,15 +148,41 @@ const CrudScreen = ({navigation}: any) => {
   const handleDel = async (expense: expenseTypo) => {
     if (!user) {
       console.log('User is not logged in.');
-      return; // Early return if no user is available
+      return;
     }
     const db = await getDBConnection();
     await deleteExpense(db, expense.id, user.id);
 
-    // Re-fetch the expenses after deleting
     const updatedExpenses = await getUserExpenses(db, user.id);
     setExpenses(updatedExpenses);
   };
+
+  const colors = [
+    '#fbd203',
+    '#ffb300',
+    '#ff9100',
+    '#ff6c00',
+    '#ff6347',
+    '#ff4500',
+    '#ffd700',
+    '#32cd32',
+    '#8a2be2',
+    '#ff1493',
+    '#00bfff',
+    '#228b22',
+    '#ff69b4',
+    '#9932cc',
+    '#ff4500',
+    '#7b68ee',
+  ];
+  const validExpenses = expenses.filter(
+    expense => !isNaN(expense.cost) && expense.cost > 0,
+  );
+  const series = validExpenses.map((expense, index) => ({
+    value: expense.cost,
+    color: colors[index % colors.length],
+    label: {text: expense.name, fontWeight: 'bold'},
+  }));
 
   return (
     <View style={{padding: 20}}>
@@ -168,7 +208,9 @@ const CrudScreen = ({navigation}: any) => {
           id="exCost"
           placeholder="Enter the cost to add...."
           style={{borderWidth: 1, margin: 10, paddingHorizontal: 10}}
-          onChangeText={cost => setCost(parseInt(cost))}
+          onChangeText={cost => {
+            !isNaN(parseInt(cost)) ? setCost(parseInt(cost)) : setCost(0);
+          }}
         />
         <View style={styles.btn}>
           <Button title="Create" onPress={handleCreate} />
@@ -204,6 +246,15 @@ const CrudScreen = ({navigation}: any) => {
             </View>
           )}
         />
+        <View style={styles.total}>
+          <Text>Total Cost: </Text>
+          <Text>Rs.{totalCost}</Text>
+        </View>
+        {validExpenses.length === 0 ? (
+          <Text>No item to display.</Text>
+        ) : (
+          <PieChart style={styles.pie} widthAndHeight={250} series={series} />
+        )}
       </View>
 
       <Modal
@@ -230,7 +281,9 @@ const CrudScreen = ({navigation}: any) => {
             <View style={[styles.gap, {alignItems: 'center'}]}>
               <Text style={styles.menuItem}>Cost:</Text>
               <TextInput
-                onChangeText={text => setCost(parseInt(text))}
+                onChangeText={text =>
+                  !isNaN(parseInt(text)) ? setCost(parseInt(text)) : setCost(0)
+                }
                 style={{borderWidth: 1, paddingHorizontal: 9}}
                 value={cost.toString()}
               />
@@ -294,6 +347,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 30,
+  },
+  total: {
+    borderTopColor: 'grey',
+    borderTopWidth: 1,
+    padding: 10,
+    paddingHorizontal: 30,
+    marginVertical: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  pie: {
+    marginTop: 15,
+    margin: 'auto',
   },
 });
 
